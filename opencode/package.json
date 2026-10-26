@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "bun test --pass-with-no-tests",
+    "test": "bun test",
     "check": "bun run typecheck && bun run test"
   },
   "engines": {
