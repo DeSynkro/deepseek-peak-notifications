@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test"
-import { getPeakState, hasHolidayData, isPeak, nextTransition } from "./peak"
+import {
+  formatDuration,
+  formatLocalTime,
+  getPeakState,
+  hasHolidayData,
+  isPeak,
+  nextTransition,
+} from "./peak"
 
 describe("hasHolidayData", () => {
   test("returns true for a year with a calendar", () => {
@@ -82,5 +89,41 @@ describe("getPeakState", () => {
     expect(offPeak.next.toISOString()).toBe("2026-01-06T01:00:00.000Z")
     expect(offPeak.nextLabel).toBe("peak")
     expect(offPeak.holidayDataMissing).toBe(false)
+  })
+})
+
+describe("formatDuration", () => {
+  test("formats hours and minutes", () => {
+    expect(formatDuration(2 * 3_600_000 + 14 * 60_000)).toBe("2h 14m")
+    expect(formatDuration(3_600_000)).toBe("1h 00m")
+    expect(formatDuration(14 * 60_000)).toBe("14m")
+  })
+
+  test("rounds up partial minutes and clamps negatives", () => {
+    expect(formatDuration(14 * 60_000 + 30_000)).toBe("15m")
+    expect(formatDuration(-1)).toBe("0m")
+    expect(formatDuration(0)).toBe("0m")
+  })
+})
+
+describe("formatLocalTime", () => {
+  test("applies the New York daylight saving change", () => {
+    const before = formatLocalTime(new Date("2026-03-08T06:59:00Z"), "America/New_York")
+    const after = formatLocalTime(new Date("2026-03-08T07:00:00Z"), "America/New_York")
+
+    expect(before).toContain("01:59")
+    expect(after).toContain("03:00")
+    expect(before).toMatch(/GMT-5|EST/)
+    expect(after).toMatch(/GMT-4|EDT/)
+  })
+
+  test("applies the Sydney daylight saving change", () => {
+    const before = formatLocalTime(new Date("2026-10-03T15:59:00Z"), "Australia/Sydney")
+    const after = formatLocalTime(new Date("2026-10-03T16:00:00Z"), "Australia/Sydney")
+
+    expect(before).toContain("01:59")
+    expect(after).toContain("03:00")
+    expect(before).toMatch(/GMT\+10|AEST/)
+    expect(after).toMatch(/GMT\+11|AEDT/)
   })
 })

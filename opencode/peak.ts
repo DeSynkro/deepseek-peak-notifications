@@ -85,3 +85,27 @@ export function getPeakState(date: Date, calendar: HolidayCalendar = CN_HOLIDAYS
     holidayDataMissing: !hasHolidayData(date.getUTCFullYear(), calendar),
   }
 }
+
+export function formatDuration(ms: number): string {
+  const totalMinutes = Math.max(0, Math.ceil(ms / MINUTE_MS))
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+
+  return hours > 0 ? `${hours}h ${String(minutes).padStart(2, "0")}m` : `${minutes}m`
+}
+
+export function formatLocalTime(date: Date, timeZone?: string): string {
+  const parts = new Intl.DateTimeFormat(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone,
+    timeZoneName: "short",
+  }).formatToParts(date)
+
+  const hour = parts.find((part) => part.type === "hour")?.value ?? "00"
+  const minute = parts.find((part) => part.type === "minute")?.value ?? "00"
+  const zone = parts.find((part) => part.type === "timeZoneName")?.value
+
+  return zone ? `${hour}:${minute} ${zone}` : `${hour}:${minute}`
+}
