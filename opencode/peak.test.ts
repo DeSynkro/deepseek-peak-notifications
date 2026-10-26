@@ -137,3 +137,12 @@ describe("didPhaseChange", () => {
     expect(didPhaseChange(true, false)).toBe(true)
   })
 })
+
+describe("missing holiday data", () => {
+  test("marks a year without a calendar", () => {
+    const state = getPeakState(new Date("2027-01-04T02:00:00Z"))
+
+    expect(state.holidayDataMissing).toBe(true)
+    expect(state.peak).toBe(true)
+  })
+})
