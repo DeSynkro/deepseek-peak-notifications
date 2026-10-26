@@ -45,29 +45,38 @@ cd zed
 bun install
 ```
 
-Add a second agent to `~/.config/zed/settings.json`. Leave your existing `OpenCode` agent untouched:
+Change the `OpenCode` agent in `~/.config/zed/settings.json` so it launches the proxy:
 
 ```json
-"agent_servers": {
-  "OpenCode": {
-    "type": "custom",
-    "command": "/usr/bin/opencode",
-    "args": ["acp"]
-  },
-  "OpenCode Peak": {
-    "type": "custom",
-    "command": "/usr/bin/bun",
-    "args": [
-      "run",
-      "/home/desynkro/Projects/Code/deepseek-peak-notifications/zed/proxy.ts",
-      "--opencode",
-      "/usr/bin/opencode"
-    ]
-  }
+"OpenCode": {
+  "type": "custom",
+  "command": "/usr/bin/bun",
+  "args": [
+    "run",
+    "/absolute/path/to/deepseek-peak-notifications/zed/proxy.ts",
+    "--opencode",
+    "/usr/bin/opencode"
+  ]
 }
 ```
 
-Start a new thread with `OpenCode Peak`.
+Keep your existing model options. Start or resume an `OpenCode` thread.
+
+For side-by-side testing, you can add a separate agent such as `OpenCode Peak` that uses the same command. Leave the main `OpenCode` agent on its original command until the proxy is verified.
+
+## Process lifecycle
+
+The proxy is not a daemon. Zed starts it when an OpenCode thread starts and stops it when the thread closes or Zed exits. The proxy starts one `opencode acp` child, which is the same agent process Zed used before.
+
+It does not add a systemd service, cron job, login item, or global install. While running, it keeps only session IDs and a 30 second timer in memory.
+
+Files added:
+
+- `zed/` source, tests, and `node_modules` for development
+- `~/.config/zed/settings.json.pre-deepseek-peak-proxy` settings backup
+- the normal OpenCode session data for conversations
+
+No separate log file or state directory is created by the proxy. Its diagnostics go to Zed logs through stderr.
 
 ## Test the notice
 
@@ -103,19 +112,22 @@ The proxy then behaves like a transparent ACP forwarder.
 
 ## Rollback
 
-Use the original `OpenCode` agent at any time. Nothing in OpenCode changes.
+Nothing in OpenCode changes. Existing sessions remain in OpenCode.
 
-To remove the proxy completely:
+To remove the proxy from Zed, restore the original command:
 
-1. Remove the `OpenCode Peak` block from `~/.config/zed/settings.json`.
-2. Restart Zed.
-3. Optionally delete the `zed` directory and its `node_modules`.
+```json
+"command": "/usr/bin/opencode",
+"args": ["acp"]
+```
 
-A backup of the Zed settings from setup can be stored as:
+Then restart Zed. You can also restore the settings backup:
 
 ```text
 ~/.config/zed/settings.json.pre-deepseek-peak-proxy
 ```
+
+Optionally delete the `zed` directory and its `node_modules`.
 
 ## Troubleshooting
 

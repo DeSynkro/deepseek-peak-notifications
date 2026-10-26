@@ -67,29 +67,24 @@ cd zed
 bun install
 ```
 
-Add a second agent to `~/.config/zed/settings.json`. Leave the existing `OpenCode` agent untouched:
+Change the `OpenCode` agent in `~/.config/zed/settings.json` so it launches the proxy. Keep your existing model options:
 
 ```json
-"agent_servers": {
-  "OpenCode": {
-    "type": "custom",
-    "command": "/usr/bin/opencode",
-    "args": ["acp"]
-  },
-  "OpenCode Peak": {
-    "type": "custom",
-    "command": "/usr/bin/bun",
-    "args": [
-      "run",
-      "/absolute/path/to/deepseek-peak-notifications/zed/proxy.ts",
-      "--opencode",
-      "/usr/bin/opencode"
-    ]
-  }
+"OpenCode": {
+  "type": "custom",
+  "command": "/usr/bin/bun",
+  "args": [
+    "run",
+    "/absolute/path/to/deepseek-peak-notifications/zed/proxy.ts",
+    "--opencode",
+    "/usr/bin/opencode"
+  ]
 }
 ```
 
-Start a new thread with `OpenCode Peak`. If anything goes wrong, switch back to the original `OpenCode` agent.
+Start or resume an `OpenCode` thread. Existing OpenCode sessions remain intact because the proxy forwards ACP traffic unchanged.
+
+You can also add a second agent for side-by-side testing. See [zed/README.md](zed/README.md) for the full setup, notices, passthrough mode, and rollback steps.
 
 To verify notice rendering, add `--test-notice` to the proxy args. Remove it after testing.
 
@@ -118,6 +113,7 @@ flip at 17:00 AEDT
 - **Transition toast:** shows a short toast when peak starts or ends.
 - **Zed notices:** optional ACP notices in the Zed Agent Panel.
 - **Peak warning:** the Zed adapter warns 15 minutes before each peak window.
+- **No background daemon:** the Zed proxy runs only while an OpenCode thread is active.
 - **Holiday aware:** Chinese public holidays are treated as off-peak.
 - **No network:** pricing and holiday data are local.
 - **No credentials:** reads nothing from your OpenCode setup.
@@ -218,7 +214,14 @@ The Zed tests cover ACP forwarding, session tracking, capability gating, the 15-
 
 Remove the OpenCode plugin path from `~/.config/opencode/tui.json`, then restart OpenCode.
 
-For Zed, remove the `OpenCode Peak` agent block from `~/.config/zed/settings.json` and restart Zed. The original `OpenCode` agent is unaffected.
+For Zed, restore the original `OpenCode` command in `~/.config/zed/settings.json`:
+
+```json
+"command": "/usr/bin/opencode",
+"args": ["acp"]
+```
+
+You can also restore the backup created during setup. Restart Zed afterwards.
 
 There is no automatic uninstall script. Both config files can contain comments, so manual removal is safer than a naive text edit.
 

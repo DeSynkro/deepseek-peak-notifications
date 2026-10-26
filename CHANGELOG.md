@@ -11,6 +11,10 @@
 - `--test-notice` for verifying Zed notice rendering.
 - Zed setup and rollback documentation.
 
+### Changed
+
+- Zed setup routes the existing OpenCode agent through the proxy, so existing threads resume normally.
+
 ## 0.1.0 - 2026-10-26
 
 ### Added
