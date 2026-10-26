@@ -2,11 +2,29 @@
 
 import type { TuiPlugin, TuiPluginApi, TuiPluginModule, TuiSlotContext } from "@opencode-ai/plugin/tui"
 import { createSignal, onCleanup } from "solid-js"
-import { formatDuration, formatLocalTime, getPeakState } from "./peak"
+import { didPhaseChange, formatDuration, formatLocalTime, getPeakState, isPeak } from "./peak"
 
 function PeakAlert(props: { api: TuiPluginApi; ctx: TuiSlotContext }) {
-  const [now, setNow] = createSignal(new Date())
-  const timer = setInterval(() => setNow(new Date()), 30_000)
+  const initial = new Date()
+  const [now, setNow] = createSignal(initial)
+  let previousPeak = isPeak(initial)
+
+  const timer = setInterval(() => {
+    const current = new Date()
+    const peak = isPeak(current)
+
+    if (didPhaseChange(previousPeak, peak)) {
+      props.api.ui.toast({
+        variant: peak ? "warning" : "success",
+        title: "DeepSeek Peak Notifications",
+        message: peak ? "Peak pricing has started." : "Off-peak pricing has started.",
+        duration: 4000,
+      })
+    }
+
+    previousPeak = peak
+    setNow(current)
+  }, 30_000)
 
   onCleanup(() => clearInterval(timer))
 

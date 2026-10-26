@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import {
+  didPhaseChange,
   formatDuration,
   formatLocalTime,
   getPeakState,
@@ -125,5 +126,14 @@ describe("formatLocalTime", () => {
     expect(after).toContain("03:00")
     expect(before).toMatch(/GMT\+10|AEST/)
     expect(after).toMatch(/GMT\+11|AEDT/)
+  })
+})
+
+describe("didPhaseChange", () => {
+  test("reports only actual phase changes", () => {
+    expect(didPhaseChange(false, false)).toBe(false)
+    expect(didPhaseChange(true, true)).toBe(false)
+    expect(didPhaseChange(false, true)).toBe(true)
+    expect(didPhaseChange(true, false)).toBe(true)
   })
 })

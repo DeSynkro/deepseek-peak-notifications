@@ -109,3 +109,7 @@ export function formatLocalTime(date: Date, timeZone?: string): string {
 
   return zone ? `${hour}:${minute} ${zone}` : `${hour}:${minute}`
 }
+
+export function didPhaseChange(previousPeak: boolean, currentPeak: boolean): boolean {
+  return previousPeak !== currentPeak
+}
