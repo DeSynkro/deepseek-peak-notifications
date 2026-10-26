@@ -1,0 +1,37 @@
+{
+  "name": "opencode-deepseek-peak-notifications",
+  "version": "0.1.0-dev",
+  "description": "OpenCode 1.19 TUI sidebar alert for DeepSeek peak and off-peak pricing",
+  "type": "module",
+  "license": "MIT",
+  "author": "DeSynkro",
+  "exports": {
+    "./tui": "./tui.tsx"
+  },
+  "files": [
+    "tui.tsx",
+    "peak.ts"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test --pass-with-no-tests",
+    "check": "bun run typecheck && bun run test"
+  },
+  "engines": {
+    "opencode": ">=1.19.0 <2"
+  },
+  "peerDependencies": {
+    "@opencode-ai/plugin": ">=1.19.0 <2",
+    "@opentui/core": ">=0.4.5",
+    "@opentui/solid": ">=0.4.5",
+    "solid-js": ">=1.9.0"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "1.19.4",
+    "@opentui/core": "0.4.5",
+    "@opentui/solid": "0.4.5",
+    "@types/bun": "latest",
+    "solid-js": "^1.9.0",
+    "typescript": "^7.0.2"
+  }
+}
