@@ -5,6 +5,13 @@
   "type": "module",
   "license": "MIT",
   "author": "DeSynkro",
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "deepseek",
+    "tui",
+    "sidebar"
+  ],
   "exports": {
     "./tui": "./tui.tsx"
   },
