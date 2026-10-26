@@ -74,7 +74,15 @@ export function main() {
     process.exit(1)
   }
 
-  child.stderr.pipe(process.stderr)
+  const childStdin = child.stdin
+  const childStdout = child.stdout
+  const childStderr = child.stderr
+
+  childStderr.pipe(process.stderr)
+
+  console.error(`[deepseek-peak] starting ACP proxy for ${options.opencode}`)
+  if (!options.notices) console.error("[deepseek-peak] notices disabled by --no-notices")
+  if (options.testNotice) console.error("[deepseek-peak] test notice enabled")
 
   let scheduler: NoticeScheduler | undefined
 
@@ -105,16 +113,38 @@ export function main() {
   })
 
   const agent = createInterface({
-    input: child.stdout,
+    input: childStdout,
     crlfDelay: Infinity,
   })
 
+  let stopping = false
+
+  const stop = (signal: NodeJS.Signals) => {
+    if (stopping) return
+    stopping = true
+    child.kill(signal)
+
+    const kill = setTimeout(() => {
+      if (child.exitCode === null) child.kill("SIGKILL")
+    }, 5000)
+    kill.unref()
+  }
+
   client.on("line", (line) => {
     if (!line.trim()) return
-    writeLine(child.stdin!, line, client)
+    writeLine(childStdin, line, client)
 
     const message = parseMessage(line)
-    if (message) tracker.handleClient(message)
+    if (!message) return
+
+    tracker.handleClient(message)
+    if (message.method === "initialize") {
+      console.error(
+        tracker.noticesSupported
+          ? "[deepseek-peak] session notices enabled"
+          : "[deepseek-peak] session notices unavailable, running in passthrough mode",
+      )
+    }
   })
 
   agent.on("line", (line) => {
@@ -134,16 +164,25 @@ export function main() {
     clearInterval(timer)
     client.close()
     agent.close()
+    console.error(`[deepseek-peak] opencode acp exited (code=${code ?? "none"}, signal=${signal ?? "none"})`)
     process.exit(code ?? (signal ? 1 : 0))
   })
 
   process.stdin.on("end", () => {
-    child.stdin?.end()
+    childStdin.end()
+    const kill = setTimeout(() => stop("SIGTERM"), 5000)
+    kill.unref()
   })
 
-  const stop = (signal: NodeJS.Signals) => {
-    child.kill(signal)
-  }
+  process.stdout.on("error", (error) => {
+    console.error(`[deepseek-peak] stdout error: ${error.message}`)
+    stop("SIGTERM")
+  })
+
+  childStdin.on("error", (error) => {
+    console.error(`[deepseek-peak] child stdin error: ${error.message}`)
+    stop("SIGTERM")
+  })
 
   process.on("SIGINT", () => stop("SIGINT"))
   process.on("SIGTERM", () => stop("SIGTERM"))
