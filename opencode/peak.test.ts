@@ -6,6 +6,7 @@ import {
   getPeakState,
   hasHolidayData,
   isPeak,
+  nextPeakStart,
   nextTransition,
 } from "./peak"
 
@@ -144,5 +145,19 @@ describe("missing holiday data", () => {
 
     expect(state.holidayDataMissing).toBe(true)
     expect(state.peak).toBe(true)
+  })
+})
+
+describe("nextPeakStart", () => {
+  test("finds the next peak window start", () => {
+    expect(nextPeakStart(new Date("2026-01-05T00:30:00Z")).toISOString()).toBe("2026-01-05T01:00:00.000Z")
+    expect(nextPeakStart(new Date("2026-01-05T02:00:00Z")).toISOString()).toBe("2026-01-05T06:00:00.000Z")
+    expect(nextPeakStart(new Date("2026-01-05T04:30:00Z")).toISOString()).toBe("2026-01-05T06:00:00.000Z")
+    expect(nextPeakStart(new Date("2026-01-05T07:00:00Z")).toISOString()).toBe("2026-01-06T01:00:00.000Z")
+  })
+
+  test("skips weekends and long holidays", () => {
+    expect(nextPeakStart(new Date("2026-01-09T10:00:00Z")).toISOString()).toBe("2026-01-12T01:00:00.000Z")
+    expect(nextPeakStart(new Date("2026-02-16T02:00:00Z")).toISOString()).toBe("2026-02-24T01:00:00.000Z")
   })
 })

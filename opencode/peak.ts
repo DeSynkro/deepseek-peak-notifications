@@ -59,19 +59,31 @@ export function isPeak(date: Date, calendar: HolidayCalendar = CN_HOLIDAYS): boo
   return PEAK_WINDOWS_UTC.some(([from, to]) => hour >= from && hour < to)
 }
 
-export function nextTransition(from: Date, calendar: HolidayCalendar = CN_HOLIDAYS): Date {
-  const peak = isPeak(from, calendar)
+function findBoundary(
+  from: Date,
+  calendar: HolidayCalendar,
+  matches: (candidate: Date) => boolean,
+): Date {
   const dayStart = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate())
 
   for (let day = 0; day < MAX_TRANSITION_DAYS; day++) {
     for (const minute of TRANSITION_MINUTES_UTC) {
       const candidate = new Date(dayStart + day * DAY_MS + minute * MINUTE_MS)
       if (candidate.getTime() <= from.getTime()) continue
-      if (isPeak(candidate, calendar) !== peak) return candidate
+      if (matches(candidate)) return candidate
     }
   }
 
-  throw new Error("Could not find a DeepSeek pricing transition within 31 days")
+  throw new Error("Could not find a DeepSeek pricing boundary within 31 days")
+}
+
+export function nextTransition(from: Date, calendar: HolidayCalendar = CN_HOLIDAYS): Date {
+  const peak = isPeak(from, calendar)
+  return findBoundary(from, calendar, (candidate) => isPeak(candidate, calendar) !== peak)
+}
+
+export function nextPeakStart(from: Date, calendar: HolidayCalendar = CN_HOLIDAYS): Date {
+  return findBoundary(from, calendar, (candidate) => isPeak(candidate, calendar))
 }
 
 export function getPeakState(date: Date, calendar: HolidayCalendar = CN_HOLIDAYS): PeakState {
