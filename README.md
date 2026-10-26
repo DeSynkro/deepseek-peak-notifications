@@ -8,13 +8,14 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT"></a>
   <a href="https://opencode.ai"><img src="https://img.shields.io/badge/OpenCode-1.19-orange.svg" alt="OpenCode 1.19"></a>
+  <a href="https://zed.dev"><img src="https://img.shields.io/badge/Zed-1.25.2%2B-blue.svg" alt="Zed 1.25.2 or newer"></a>
 </p>
 
 <p align="center">
   Built by <a href="https://desynkro.com">DeSynkro</a> with assistance from <a href="https://opencode.ai">Opencode</a>.
 </p>
 
-DeepSeek Peak Notifications is a small OpenCode 1.19 TUI plugin. It adds a sidebar card that shows the current DeepSeek pricing phase, a countdown to the next change, and a toast when peak starts or ends.
+DeepSeek Peak Notifications is a small OpenCode 1.19 TUI plugin with an optional Zed adapter. The OpenCode plugin adds a sidebar card, a countdown to the next change, and a toast when peak starts or ends. The Zed adapter uses ACP notices to show the same pricing changes inside the Agent Panel.
 
 ## Why this exists
 
@@ -22,12 +23,13 @@ DeepSeek pricing follows fixed UTC windows and Chinese public holidays. If you u
 
 ## Status
 
-v0.1 is available for OpenCode 1.19. Zed support is planned for later.
+v0.2 is in development. The OpenCode TUI plugin is available for OpenCode 1.19. The optional Zed adapter requires Zed 1.25.2 or newer.
 
 ## Requirements
 
 - **OpenCode:** 1.19.
-- **Bun:** used to install the local plugin dependencies.
+- **Zed:** 1.25.2 or newer for the optional Zed adapter.
+- **Bun:** used to install local dependencies and run the Zed proxy.
 - **Runtime:** no account, API key, or network connection is required.
 
 ## Quick Start
@@ -56,6 +58,43 @@ If you prefer to edit the config yourself, add the absolute path to `~/.config/o
 
 TUI plugins are loaded from `tui.json`, not `opencode.jsonc`.
 
+### Zed
+
+Install the proxy dependencies:
+
+```sh
+cd zed
+bun install
+```
+
+Add a second agent to `~/.config/zed/settings.json`. Leave the existing `OpenCode` agent untouched:
+
+```json
+"agent_servers": {
+  "OpenCode": {
+    "type": "custom",
+    "command": "/usr/bin/opencode",
+    "args": ["acp"]
+  },
+  "OpenCode Peak": {
+    "type": "custom",
+    "command": "/usr/bin/bun",
+    "args": [
+      "run",
+      "/absolute/path/to/deepseek-peak-notifications/zed/proxy.ts",
+      "--opencode",
+      "/usr/bin/opencode"
+    ]
+  }
+}
+```
+
+Start a new thread with `OpenCode Peak`. If anything goes wrong, switch back to the original `OpenCode` agent.
+
+To verify notice rendering, add `--test-notice` to the proxy args. Remove it after testing.
+
+See [zed/README.md](zed/README.md) for the full Zed setup, notices, passthrough mode, and rollback steps.
+
 ## What it shows
 
 ```text
@@ -77,6 +116,8 @@ flip at 17:00 AEDT
 - **Live countdown:** shows how long until the next pricing change.
 - **Local time:** uses the system timezone and updates through daylight saving.
 - **Transition toast:** shows a short toast when peak starts or ends.
+- **Zed notices:** optional ACP notices in the Zed Agent Panel.
+- **Peak warning:** the Zed adapter warns 15 minutes before each peak window.
 - **Holiday aware:** Chinese public holidays are treated as off-peak.
 - **No network:** pricing and holiday data are local.
 - **No credentials:** reads nothing from your OpenCode setup.
@@ -92,7 +133,15 @@ Source: <https://api-docs.deepseek.com/quick_start/pricing/>
 
 ## Configuration
 
-There are no options in v0.1.
+The OpenCode TUI plugin has no options.
+
+The Zed proxy accepts:
+
+- `--opencode <path>`: path to the real OpenCode binary. Defaults to `opencode` from `PATH`.
+- `--no-notices`: run as a transparent ACP passthrough.
+- `--test-notice`: send one test notice when a session starts.
+
+The 15-minute peak warning is enabled by default in the Zed adapter.
 
 ### Updating the holiday calendar
 
@@ -126,6 +175,19 @@ Until a year is added, the plugin treats that year as having no holidays and sho
 
 Add the current year to `CN_HOLIDAYS` in `opencode/peak.ts`. The warning is expected when the calendar does not have data for the current year.
 
+### The Zed agent does not start
+
+- Confirm `/usr/bin/bun` exists.
+- Run `cd zed && bun install`.
+- Check the proxy path and `--opencode` path in `~/.config/zed/settings.json`.
+- Check Zed logs for `[deepseek-peak]` messages.
+
+### Zed works but notices do not appear
+
+- Confirm Zed is 1.25.2 or newer.
+- Check for `[deepseek-peak] session notices enabled` in Zed logs.
+- If the log says `session notices unavailable`, Zed did not advertise the capability and the proxy is running in passthrough mode.
+
 ## Development
 
 The plugin has no build step. OpenCode transpiles the raw TypeScript and JSX at runtime.
@@ -144,11 +206,21 @@ bun test
 
 The tests cover peak windows, weekends, Chinese holidays, long holidays, next transitions, daylight saving in New York and Sydney, and missing holiday data.
 
+Run the Zed adapter checks from `zed/`:
+
+```sh
+bun run check
+```
+
+The Zed tests cover ACP forwarding, session tracking, capability gating, the 15-minute warning, transition notices, deduplication, and shutdown flags.
+
 ## Uninstall
 
-Remove the plugin path from `~/.config/opencode/tui.json`, then restart OpenCode.
+Remove the OpenCode plugin path from `~/.config/opencode/tui.json`, then restart OpenCode.
 
-There is no automatic uninstall script. The config file can contain comments, so manual removal is safer than a naive text edit.
+For Zed, remove the `OpenCode Peak` agent block from `~/.config/zed/settings.json` and restart Zed. The original `OpenCode` agent is unaffected.
+
+There is no automatic uninstall script. Both config files can contain comments, so manual removal is safer than a naive text edit.
 
 ## Support
 

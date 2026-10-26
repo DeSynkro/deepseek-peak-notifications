@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Optional Zed ACP proxy for DeepSeek pricing notices.
+- 15-minute warning before each peak window.
+- Peak start and off-peak start notices in the Zed Agent Panel.
+- ACP passthrough mode with `--no-notices`.
+- `--test-notice` for verifying Zed notice rendering.
+- Zed setup and rollback documentation.
+
 ## 0.1.0 - 2026-10-26
 
 ### Added
