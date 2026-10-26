@@ -1,9 +1,22 @@
 export type HolidayCalendar = Record<number, ReadonlyArray<readonly [string, string]>>
 
+export type PeakState = {
+  peak: boolean
+  next: Date
+  nextLabel: "peak" | "off-peak"
+  holidayDataMissing: boolean
+}
+
+const MINUTE_MS = 60_000
+const DAY_MS = 86_400_000
+
 const PEAK_WINDOWS_UTC: ReadonlyArray<readonly [number, number]> = [
   [1, 4],
   [6, 10],
 ]
+
+const TRANSITION_MINUTES_UTC: ReadonlyArray<number> = [60, 240, 360, 600]
+const MAX_TRANSITION_DAYS = 31
 
 // Chinese public holiday rest days, inclusive. The State Council publishes the
 // next year's calendar around November, so add the new ranges when they appear.
@@ -44,4 +57,31 @@ export function isPeak(date: Date, calendar: HolidayCalendar = CN_HOLIDAYS): boo
 
   const hour = date.getUTCHours() + date.getUTCMinutes() / 60
   return PEAK_WINDOWS_UTC.some(([from, to]) => hour >= from && hour < to)
+}
+
+export function nextTransition(from: Date, calendar: HolidayCalendar = CN_HOLIDAYS): Date {
+  const peak = isPeak(from, calendar)
+  const dayStart = Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate())
+
+  for (let day = 0; day < MAX_TRANSITION_DAYS; day++) {
+    for (const minute of TRANSITION_MINUTES_UTC) {
+      const candidate = new Date(dayStart + day * DAY_MS + minute * MINUTE_MS)
+      if (candidate.getTime() <= from.getTime()) continue
+      if (isPeak(candidate, calendar) !== peak) return candidate
+    }
+  }
+
+  throw new Error("Could not find a DeepSeek pricing transition within 31 days")
+}
+
+export function getPeakState(date: Date, calendar: HolidayCalendar = CN_HOLIDAYS): PeakState {
+  const peak = isPeak(date, calendar)
+  const next = nextTransition(date, calendar)
+
+  return {
+    peak,
+    next,
+    nextLabel: isPeak(next, calendar) ? "peak" : "off-peak",
+    holidayDataMissing: !hasHolidayData(date.getUTCFullYear(), calendar),
+  }
 }

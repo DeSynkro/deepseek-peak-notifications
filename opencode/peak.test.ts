@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { hasHolidayData, isPeak } from "./peak"
+import { getPeakState, hasHolidayData, isPeak, nextTransition } from "./peak"
 
 describe("hasHolidayData", () => {
   test("returns true for a year with a calendar", () => {
@@ -45,5 +45,42 @@ describe("isPeak", () => {
   test("returns to peak on the first weekday after a holiday", () => {
     expect(isPeak(new Date("2026-02-24T02:00:00Z"))).toBe(true)
     expect(isPeak(new Date("2026-04-07T02:00:00Z"))).toBe(true)
+  })
+})
+
+describe("nextTransition", () => {
+  test("finds the next boundary inside a peak window", () => {
+    expect(nextTransition(new Date("2026-01-05T01:00:00Z")).toISOString()).toBe("2026-01-05T04:00:00.000Z")
+    expect(nextTransition(new Date("2026-01-05T06:00:00Z")).toISOString()).toBe("2026-01-05T10:00:00.000Z")
+  })
+
+  test("finds the next peak window from off-peak", () => {
+    expect(nextTransition(new Date("2026-01-05T04:00:00Z")).toISOString()).toBe("2026-01-05T06:00:00.000Z")
+    expect(nextTransition(new Date("2026-01-05T10:00:00Z")).toISOString()).toBe("2026-01-06T01:00:00.000Z")
+    expect(nextTransition(new Date("2026-01-05T00:00:00Z")).toISOString()).toBe("2026-01-05T01:00:00.000Z")
+  })
+
+  test("skips the weekend", () => {
+    expect(nextTransition(new Date("2026-01-09T10:00:00Z")).toISOString()).toBe("2026-01-12T01:00:00.000Z")
+  })
+
+  test("skips the Spring Festival holiday", () => {
+    expect(nextTransition(new Date("2026-02-13T10:00:00Z")).toISOString()).toBe("2026-02-24T01:00:00.000Z")
+  })
+})
+
+describe("getPeakState", () => {
+  test("reports the current phase and the next phase", () => {
+    const peak = getPeakState(new Date("2026-01-05T02:00:00Z"))
+    expect(peak.peak).toBe(true)
+    expect(peak.next.toISOString()).toBe("2026-01-05T04:00:00.000Z")
+    expect(peak.nextLabel).toBe("off-peak")
+    expect(peak.holidayDataMissing).toBe(false)
+
+    const offPeak = getPeakState(new Date("2026-01-05T12:00:00Z"))
+    expect(offPeak.peak).toBe(false)
+    expect(offPeak.next.toISOString()).toBe("2026-01-06T01:00:00.000Z")
+    expect(offPeak.nextLabel).toBe("peak")
+    expect(offPeak.holidayDataMissing).toBe(false)
   })
 })
