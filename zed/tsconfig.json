@@ -19,6 +19,7 @@
     "scheduler.test.ts",
     "../opencode/peak.ts",
     "notice.ts",
-    "notice.test.ts"
+    "notice.test.ts",
+    "proxy.integration.test.ts"
   ]
 }

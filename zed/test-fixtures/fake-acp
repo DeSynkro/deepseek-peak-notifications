@@ -1,0 +1,73 @@
+#!/usr/bin/env bun
+
+import { createInterface } from "node:readline"
+
+const write = (message: unknown) => {
+  process.stdout.write(`${JSON.stringify(message)}\n`)
+}
+
+const input = createInterface({
+  input: process.stdin,
+  crlfDelay: Infinity,
+})
+
+input.on("line", (line) => {
+  let message: {
+    id?: string | number
+    method?: string
+    params?: { sessionId?: string }
+  }
+
+  try {
+    message = JSON.parse(line)
+  } catch {
+    return
+  }
+
+  if (message.method === "initialize") {
+    write({
+      jsonrpc: "2.0",
+      id: message.id,
+      result: { protocolVersion: 1, agentCapabilities: {} },
+    })
+    return
+  }
+
+  if (message.method === "session/new") {
+    write({
+      jsonrpc: "2.0",
+      id: message.id,
+      result: { sessionId: "ses_fake" },
+    })
+    return
+  }
+
+  if (message.method === "session/load") {
+    write({ jsonrpc: "2.0", id: message.id, result: {} })
+    return
+  }
+
+  if (message.method === "session/prompt") {
+    write({
+      jsonrpc: "2.0",
+      method: "session/update",
+      params: {
+        sessionId: message.params?.sessionId,
+        update: {
+          sessionUpdate: "agent_message_chunk",
+          content: { type: "text", text: "pong" },
+        },
+      },
+    })
+    write({ jsonrpc: "2.0", id: message.id, result: { stopReason: "end_turn" } })
+    return
+  }
+
+  if (message.id !== undefined) {
+    write({ jsonrpc: "2.0", id: message.id, result: {} })
+  }
+})
+
+process.stdin.on("end", () => {
+  process.exit(0)
+})
