@@ -13,6 +13,8 @@
     "proxy.test.ts",
     "tracker.ts",
     "tracker.test.ts",
+    "scheduler.ts",
+    "scheduler.test.ts",
     "../opencode/peak.ts"
   ]
 }
