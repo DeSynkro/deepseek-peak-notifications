@@ -1,6 +1,6 @@
 {
   "name": "opencode-deepseek-peak-notifications",
-  "version": "0.1.0-dev",
+  "version": "0.1.0",
   "description": "OpenCode 1.19 TUI sidebar alert for DeepSeek peak and off-peak pricing",
   "type": "module",
   "license": "MIT",

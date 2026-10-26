@@ -22,7 +22,7 @@ DeepSeek pricing follows fixed UTC windows and Chinese public holidays. If you u
 
 ## Status
 
-v0.1 in development. OpenCode 1.19 only. Zed support is planned for later.
+v0.1 is available for OpenCode 1.19. Zed support is planned for later.
 
 ## Requirements
 
