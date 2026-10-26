@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# Local tooling and scratch files
+.scratch/
+docs/design/
+*.log
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+*.swp
+.directory
