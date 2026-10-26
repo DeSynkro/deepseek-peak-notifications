@@ -1,11 +1,14 @@
 /** @jsxImportSource @opentui/solid */
 
 import type { TuiPlugin, TuiPluginApi, TuiPluginModule, TuiSlotContext } from "@opencode-ai/plugin/tui"
-import { createSignal } from "solid-js"
+import { createSignal, onCleanup } from "solid-js"
 import { formatDuration, formatLocalTime, getPeakState } from "./peak"
 
 function PeakAlert(props: { api: TuiPluginApi; ctx: TuiSlotContext }) {
-  const [now] = createSignal(new Date())
+  const [now, setNow] = createSignal(new Date())
+  const timer = setInterval(() => setNow(new Date()), 30_000)
+
+  onCleanup(() => clearInterval(timer))
 
   const view = () => {
     const current = now()
