@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process"
 import { createInterface, type Interface } from "node:readline"
+import { AcpTracker, parseMessage } from "./tracker"
 
 export type ProxyOptions = {
   opencode: string
@@ -69,6 +70,8 @@ export function main() {
 
   child.stderr.pipe(process.stderr)
 
+  const tracker = new AcpTracker()
+
   const client = createInterface({
     input: process.stdin,
     crlfDelay: Infinity,
@@ -82,11 +85,17 @@ export function main() {
   client.on("line", (line) => {
     if (!line.trim()) return
     writeLine(child.stdin!, line, client)
+
+    const message = parseMessage(line)
+    if (message) tracker.handleClient(message)
   })
 
   agent.on("line", (line) => {
     if (!line.trim()) return
     writeLine(process.stdout, line, agent)
+
+    const message = parseMessage(line)
+    if (message) tracker.handleAgent(message)
   })
 
   child.on("error", (error) => {

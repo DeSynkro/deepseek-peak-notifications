@@ -8,5 +8,11 @@
     "skipLibCheck": true,
     "types": ["bun"]
   },
-  "include": ["proxy.ts", "proxy.test.ts", "../opencode/peak.ts"]
+  "include": [
+    "proxy.ts",
+    "proxy.test.ts",
+    "tracker.ts",
+    "tracker.test.ts",
+    "../opencode/peak.ts"
+  ]
 }
