@@ -23,7 +23,7 @@ DeepSeek pricing follows fixed UTC windows and Chinese public holidays. If you u
 
 ## Status
 
-v0.2 is in development. The OpenCode TUI plugin is available for OpenCode 1.19. The optional Zed adapter requires Zed 1.25.2 or newer.
+v0.2 is available for OpenCode 1.19 and Zed 1.25.2 or newer.
 
 ## Requirements
 
