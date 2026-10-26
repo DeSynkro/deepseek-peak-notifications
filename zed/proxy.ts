@@ -1,5 +1,7 @@
 import { spawn } from "node:child_process"
 import { createInterface, type Interface } from "node:readline"
+import { toNoticeMessage } from "./notice"
+import { NoticeScheduler, type Notice } from "./scheduler"
 import { AcpTracker, parseMessage } from "./tracker"
 
 export type ProxyOptions = {
@@ -48,6 +50,10 @@ function writeLine(target: NodeJS.WritableStream, line: string, source: Interfac
   target.once("drain", () => source.resume())
 }
 
+function writeNotice(notice: Notice) {
+  process.stdout.write(`${JSON.stringify(toNoticeMessage(notice))}\n`)
+}
+
 export function main() {
   let options: ProxyOptions
 
@@ -70,7 +76,28 @@ export function main() {
 
   child.stderr.pipe(process.stderr)
 
-  const tracker = new AcpTracker()
+  let scheduler: NoticeScheduler | undefined
+
+  const tracker = new AcpTracker((sessionId) => {
+    if (options.notices && options.testNotice && tracker.noticesSupported) {
+      writeNotice({
+        sessionId,
+        severity: "info",
+        title: "DeepSeek Peak Notifications",
+        description: "Test notice from the Zed proxy.",
+      })
+    }
+
+    scheduler?.tick()
+  })
+
+  scheduler = new NoticeScheduler({
+    sessions: () => tracker.sessionIds,
+    send: writeNotice,
+    enabled: () => options.notices && tracker.noticesSupported,
+  })
+
+  const timer = setInterval(() => scheduler?.tick(), 30_000)
 
   const client = createInterface({
     input: process.stdin,
@@ -104,6 +131,7 @@ export function main() {
   })
 
   child.on("exit", (code, signal) => {
+    clearInterval(timer)
     client.close()
     agent.close()
     process.exit(code ?? (signal ? 1 : 0))
