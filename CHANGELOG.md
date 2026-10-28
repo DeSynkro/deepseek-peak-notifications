@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.1 - 2026-10-28
+
+### Added
+
+- Current peak or off-peak status notice when a Zed thread starts or resumes.
+- Status rechecks when an already tracked session is opened again.
+- Warning-window status suppresses duplicate 15-minute warnings.
+
 ## 0.2.0 - 2026-10-26
 
 ### Added
