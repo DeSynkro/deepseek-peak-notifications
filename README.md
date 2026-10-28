@@ -112,6 +112,7 @@ flip at 17:00 AEDT
 - **Local time:** uses the system timezone and updates through daylight saving.
 - **Transition toast:** shows a short toast when peak starts or ends.
 - **Zed notices:** optional ACP notices in the Zed Agent Panel.
+- **Status on open:** reopening a thread shows the current peak or off-peak state.
 - **Peak warning:** the Zed adapter warns 15 minutes before each peak window.
 - **No background daemon:** the Zed proxy runs only while an OpenCode thread is active.
 - **Holiday aware:** Chinese public holidays are treated as off-peak.

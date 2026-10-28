@@ -31,6 +31,7 @@ The proxy:
 - forwards ACP messages in both directions
 - tracks active session IDs
 - checks Zed's `session.notices` capability
+- sends current pricing status when a thread starts or resumes
 - sends a warning 15 minutes before peak
 - sends a notice when peak starts
 - sends a notice when off-peak starts
@@ -92,11 +93,21 @@ A new session receives a test notice immediately. Remove `--test-notice` after c
 
 ## Notices
 
-- 15 minutes before peak: `Peak starts in 15m.`
-- Peak start: `Peak pricing has started.`
-- Off-peak start: `Off-peak pricing has started.`
+When a thread starts or resumes:
+
+- Off-peak: `Currently OFF-PEAK (50% off). Peak starts at 14:00 GMT+8.`
+- Peak: `Currently PEAK (2x). Off-peak returns at 18:00 GMT+8.`
+- Inside the warning window: `Currently OFF-PEAK (50% off). Peak starts in 12m at 14:00 GMT+8.`
+
+During an active thread:
+
+- 15 minutes before peak: `Currently OFF-PEAK (50% off). Peak starts in 15m at 14:00 GMT+8.`
+- Peak start: `Peak pricing has started. Off-peak returns at 18:00 GMT+8.`
+- Off-peak start: `Off-peak pricing has started. Peak returns at 14:00 GMT+8.`
 
 The 15-minute warning is only sent before peak. Off-peak gets its start notice, not a warning.
+
+Zed treats these as live notices, not a permanent status badge. The status notice appears when a thread starts or resumes, so it remains useful after reopening Zed.
 
 ## Passthrough mode
 
