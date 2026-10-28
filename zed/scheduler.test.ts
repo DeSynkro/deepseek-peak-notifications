@@ -109,3 +109,59 @@ describe("NoticeScheduler", () => {
     expect(notices).toHaveLength(0)
   })
 })
+
+describe("status notices", () => {
+  test("sends the current off-peak status", () => {
+    const now = new Date("2026-01-05T12:00:00Z")
+    const { scheduler, notices } = schedulerAt(now.toISOString())
+
+    expect(scheduler.status("ses_one", now)).toBe(true)
+    expect(notices).toHaveLength(1)
+    expect(notices[0]?.severity).toBe("info")
+    expect(notices[0]?.title).toBe("DeepSeek pricing")
+    expect(notices[0]?.description).toContain("Currently OFF-PEAK")
+    expect(notices[0]?.description).toContain("Peak starts at")
+  })
+
+  test("sends the current peak status", () => {
+    const now = new Date("2026-01-05T02:00:00Z")
+    const { scheduler, notices } = schedulerAt(now.toISOString())
+
+    expect(scheduler.status("ses_one", now)).toBe(true)
+    expect(notices).toHaveLength(1)
+    expect(notices[0]?.severity).toBe("warning")
+    expect(notices[0]?.title).toBe("DeepSeek pricing")
+    expect(notices[0]?.description).toContain("Currently PEAK")
+    expect(notices[0]?.description).toContain("Off-peak returns at")
+  })
+
+  test("includes the warning inside the 15 minute window and suppresses a duplicate", () => {
+    const now = new Date("2026-01-05T00:50:00Z")
+    const { scheduler, notices } = schedulerAt(now.toISOString())
+
+    scheduler.status("ses_one", now)
+    expect(notices).toHaveLength(1)
+    expect(notices[0]?.description).toContain("Currently OFF-PEAK")
+    expect(notices[0]?.description).toContain("Peak starts in 10m")
+
+    scheduler.tick(new Date("2026-01-05T00:50:30Z"))
+    expect(notices).toHaveLength(1)
+  })
+
+  test("does nothing when notices are disabled", () => {
+    const now = new Date("2026-01-05T12:00:00Z")
+    const { scheduler, notices } = schedulerAt(now.toISOString(), ["ses_one"], false)
+
+    expect(scheduler.status("ses_one", now)).toBe(false)
+    expect(notices).toHaveLength(0)
+  })
+})
+
+describe("tick notifications", () => {
+  test("reports which sessions were notified", () => {
+    const { scheduler } = schedulerAt("2026-01-05T00:44:00Z", ["ses_a", "ses_b"])
+
+    expect(scheduler.tick(new Date("2026-01-05T00:44:00Z")).size).toBe(0)
+    expect([...scheduler.tick(new Date("2026-01-05T00:45:00Z"))]).toEqual(["ses_a", "ses_b"])
+  })
+})

@@ -100,3 +100,26 @@ describe("AcpTracker", () => {
     }).not.toThrow()
   })
 })
+
+describe("session reopen notifications", () => {
+  test("notifies on load and resume even when the session is already tracked", () => {
+    const opened: string[] = []
+    const tracker = new AcpTracker((sessionId) => opened.push(sessionId))
+
+    tracker.handleClient({ jsonrpc: "2.0", id: 1, method: "session/load", params: { sessionId: "ses_reopen" } })
+    tracker.handleClient({ jsonrpc: "2.0", id: 2, method: "session/load", params: { sessionId: "ses_reopen" } })
+    tracker.handleClient({ jsonrpc: "2.0", id: 3, method: "session/resume", params: { sessionId: "ses_reopen" } })
+
+    expect(opened).toEqual(["ses_reopen", "ses_reopen", "ses_reopen"])
+  })
+
+  test("does not notify on a prompt for an already tracked session", () => {
+    const opened: string[] = []
+    const tracker = new AcpTracker((sessionId) => opened.push(sessionId))
+
+    tracker.handleClient({ jsonrpc: "2.0", id: 1, method: "session/load", params: { sessionId: "ses_prompt" } })
+    tracker.handleClient({ jsonrpc: "2.0", id: 2, method: "session/prompt", params: { sessionId: "ses_prompt" } })
+
+    expect(opened).toEqual(["ses_prompt"])
+  })
+})

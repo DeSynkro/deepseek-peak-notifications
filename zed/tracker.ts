@@ -48,7 +48,7 @@ export class AcpTracker {
   private readonly sessions = new Set<string>()
   private readonly clientRequests = new Map<string | number, string>()
 
-  constructor(private readonly onSessionAdded?: (sessionId: string) => void) {}
+  constructor(private readonly onSessionOpened?: (sessionId: string) => void) {}
 
   get sessionIds(): ReadonlySet<string> {
     return this.sessions
@@ -68,6 +68,11 @@ export class AcpTracker {
 
     if (message.method === "session/close" || message.method === "session/delete") {
       this.sessions.delete(sessionId)
+      return
+    }
+
+    if (message.method === "session/load" || message.method === "session/resume") {
+      this.openSession(sessionId)
       return
     }
 
@@ -93,6 +98,11 @@ export class AcpTracker {
   private addSession(sessionId: string) {
     if (this.sessions.has(sessionId)) return
     this.sessions.add(sessionId)
-    this.onSessionAdded?.(sessionId)
+    this.onSessionOpened?.(sessionId)
+  }
+
+  private openSession(sessionId: string) {
+    this.sessions.add(sessionId)
+    this.onSessionOpened?.(sessionId)
   }
 }

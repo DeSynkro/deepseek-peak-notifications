@@ -168,3 +168,58 @@ describe("ACP proxy passthrough", () => {
     expect(response.result.stopReason).toBe("end_turn")
   })
 })
+
+describe("status notices", () => {
+  test("sends a current status notice when a session starts", async () => {
+    const proxy = startProxy()
+
+    proxy.send(initializeWithNotices())
+    await proxy.waitFor((message) => message.id === 1 && message.result !== undefined)
+
+    proxy.send({ jsonrpc: "2.0", id: 2, method: "session/new", params: {} })
+    await proxy.waitFor((message) => message.id === 2 && message.result?.sessionId === "ses_fake")
+
+    const notice = await proxy.waitFor(
+      (message) =>
+        message.method === "session/update" &&
+        message.params?.update?.sessionUpdate === "notice" &&
+        typeof message.params.update.title === "string",
+    )
+
+    expect(notice.params.update.title).toContain("DeepSeek")
+    expect(notice.params.sessionId).toBe("ses_fake")
+  })
+
+  test("sends another status notice when the session is loaded again", async () => {
+    const proxy = startProxy()
+
+    proxy.send(initializeWithNotices())
+    await proxy.waitFor((message) => message.id === 1 && message.result !== undefined)
+
+    proxy.send({ jsonrpc: "2.0", id: 2, method: "session/new", params: {} })
+    await proxy.waitFor((message) => message.id === 2 && message.result?.sessionId === "ses_fake")
+
+    const count = () =>
+      proxy.lines.filter(
+        (message) =>
+          message.method === "session/update" && message.params?.update?.sessionUpdate === "notice",
+      ).length
+
+    await proxy.waitFor(() => count() >= 1)
+
+    proxy.send({
+      jsonrpc: "2.0",
+      id: 3,
+      method: "session/load",
+      params: { sessionId: "ses_fake", cwd: "/tmp", mcpServers: [] },
+    })
+
+    await proxy.waitFor(() => count() >= 2)
+    const notices = proxy.lines.filter(
+      (message) =>
+        message.method === "session/update" && message.params?.update?.sessionUpdate === "notice",
+    )
+    expect(notices[1]?.params.sessionId).toBe("ses_fake")
+    expect(notices[1]?.params.update.title).toBe("DeepSeek pricing")
+  })
+})

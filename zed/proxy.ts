@@ -87,16 +87,20 @@ export function main() {
   let scheduler: NoticeScheduler | undefined
 
   const tracker = new AcpTracker((sessionId) => {
-    if (options.notices && options.testNotice && tracker.noticesSupported) {
+    if (!tracker.noticesSupported) return
+
+    if (options.notices && options.testNotice) {
       writeNotice({
         sessionId,
         severity: "info",
         title: "DeepSeek Peak Notifications",
         description: "Test notice from the Zed proxy.",
       })
+      return
     }
 
-    scheduler?.tick()
+    const notified = scheduler?.tick() ?? new Set<string>()
+    if (!notified.has(sessionId)) scheduler?.status(sessionId)
   })
 
   scheduler = new NoticeScheduler({

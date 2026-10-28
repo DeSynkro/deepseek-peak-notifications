@@ -24,8 +24,47 @@ export class NoticeScheduler {
     this.lastPeak = isPeak(options.initialNow ?? new Date())
   }
 
-  tick(now: Date = new Date()) {
-    if (!this.options.enabled()) return
+  status(sessionId: string, now: Date = new Date()): boolean {
+    if (!this.options.enabled()) return false
+
+    const state = getPeakState(now)
+
+    if (state.peak) {
+      this.options.send({
+        sessionId,
+        severity: "warning",
+        title: "DeepSeek pricing",
+        description: `Currently PEAK (2x). Off-peak returns at ${formatLocalTime(state.next)}.`,
+      })
+      return true
+    }
+
+    const nextPeak = nextPeakStart(now)
+    const msUntil = nextPeak.getTime() - now.getTime()
+
+    if (msUntil > 0 && msUntil <= WARNING_MS) {
+      this.warned.set(sessionId, nextPeak.getTime())
+      this.options.send({
+        sessionId,
+        severity: "info",
+        title: "DeepSeek pricing",
+        description: `Currently OFF-PEAK (50% off). Peak starts in ${formatDuration(msUntil)} at ${formatLocalTime(nextPeak)}.`,
+      })
+      return true
+    }
+
+    this.options.send({
+      sessionId,
+      severity: "info",
+      title: "DeepSeek pricing",
+      description: `Currently OFF-PEAK (50% off). Peak starts at ${formatLocalTime(nextPeak)}.`,
+    })
+    return true
+  }
+
+  tick(now: Date = new Date()): Set<string> {
+    const notified = new Set<string>()
+    if (!this.options.enabled()) return notified
 
     const state = getPeakState(now)
     const sessions = [...new Set(this.options.sessions())]
@@ -39,6 +78,7 @@ export class NoticeScheduler {
             title: "DeepSeek peak pricing",
             description: `Peak pricing has started. Off-peak returns at ${formatLocalTime(state.next)}.`,
           })
+          notified.add(sessionId)
         }
         this.warned.clear()
       } else {
@@ -49,17 +89,18 @@ export class NoticeScheduler {
             title: "DeepSeek off-peak pricing",
             description: `Off-peak pricing has started. Peak returns at ${formatLocalTime(state.next)}.`,
           })
+          notified.add(sessionId)
         }
       }
 
       this.lastPeak = state.peak
     }
 
-    if (state.peak) return
+    if (state.peak) return notified
 
     const nextPeak = nextPeakStart(now)
     const msUntil = nextPeak.getTime() - now.getTime()
-    if (msUntil <= 0 || msUntil > WARNING_MS) return
+    if (msUntil <= 0 || msUntil > WARNING_MS) return notified
 
     for (const sessionId of sessions) {
       if (this.warned.get(sessionId) === nextPeak.getTime()) continue
@@ -69,8 +110,11 @@ export class NoticeScheduler {
         sessionId,
         severity: "warning",
         title: "DeepSeek peak pricing",
-        description: `Peak starts in ${formatDuration(msUntil)} (${formatLocalTime(nextPeak)}).`,
+        description: `Currently OFF-PEAK (50% off). Peak starts in ${formatDuration(msUntil)} at ${formatLocalTime(nextPeak)}.`,
       })
+      notified.add(sessionId)
     }
+
+    return notified
   }
 }
