@@ -7,10 +7,10 @@ This is not a Zed extension. Zed cannot add custom sidebar or status-bar UI, so 
 ## Requirements
 
 - Zed 1.25.2 or newer, for ACP session notices.
-- OpenCode 1.19.
+- OpenCode V1 or V2 with the `opencode acp` command available.
 - Bun, used to run the proxy.
 
-The proxy is local only. It is not published to npm.
+The proxy is local only. It is not published to npm. It is independent of the OpenCode TUI plugin and invokes `opencode acp`, which is available in both OpenCode V1 and V2.
 
 ## How it works
 
@@ -46,22 +46,29 @@ cd zed
 bun install
 ```
 
-Change the `OpenCode` agent in `~/.config/zed/settings.json` so it launches the proxy:
+Find the paths to Bun and OpenCode:
+
+```sh
+which bun
+which opencode
+```
+
+Change the `OpenCode` agent in `~/.config/zed/settings.json` so it launches the proxy. Keep your existing model options:
 
 ```json
 "OpenCode": {
   "type": "custom",
-  "command": "/usr/bin/bun",
+  "command": "/home/you/.bun/bin/bun",
   "args": [
     "run",
     "/absolute/path/to/deepseek-peak-notifications/zed/proxy.ts",
     "--opencode",
-    "/usr/bin/opencode"
+    "/home/you/.local/bin/opencode"
   ]
 }
 ```
 
-Keep your existing model options. Start or resume an `OpenCode` thread.
+Use the paths printed by `which`, not the examples above. Start or resume an `OpenCode` thread.
 
 For side-by-side testing, you can add a separate agent such as `OpenCode Peak` that uses the same command. Leave the main `OpenCode` agent on its original command until the proxy is verified.
 
@@ -125,10 +132,10 @@ The proxy then behaves like a transparent ACP forwarder.
 
 Nothing in OpenCode changes. Existing sessions remain in OpenCode.
 
-To remove the proxy from Zed, restore the original command:
+To remove the proxy from Zed, restore the original command, using the OpenCode path from `which opencode`:
 
 ```json
-"command": "/usr/bin/opencode",
+"command": "/home/you/.local/bin/opencode",
 "args": ["acp"]
 ```
 
@@ -144,7 +151,7 @@ Optionally delete the `zed` directory and its `node_modules`.
 
 ### The agent does not start
 
-- Confirm `/usr/bin/bun` exists.
+- Confirm the Bun path from `which bun` exists.
 - Run `cd zed && bun install`.
 - Check the proxy path in the Zed settings.
 - Check Zed's logs for `[deepseek-peak]` messages.
